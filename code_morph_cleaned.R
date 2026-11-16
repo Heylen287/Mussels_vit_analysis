@@ -8,7 +8,7 @@ library(mgcv)
 set.seed(123)
 theme_set(theme_bw(base_size = 14))
 
-file_path <- "F:/мидийное/mussels morphology analysis/Морфометрия Витязь.xlsx"
+file_path <- "data/Морфометрия Витязь.xlsx"
 dat <- read_excel(file_path, sheet = 4)
 dat <- dat[!is.na(dat$ID), ]
 
