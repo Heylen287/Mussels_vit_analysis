@@ -5,7 +5,8 @@ library(ggplot2)
 library(vegan)
 library(ggforce)
 
-file_path <- "E:/мидийное/mussels morphology analysis/Морфометрия Витязь.xlsx"
+
+file_path <- "data/Морфометрия Витязь.xlsx"
 df_morph <- read_excel(file_path, sheet = 4)
 
 df_morph  <- df_morph [!is.na(df_morph $ID), ]
