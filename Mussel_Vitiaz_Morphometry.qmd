@@ -1,6 +1,10 @@
 ---
 title: Морфометрия мидий из гибридной зоны в бухте Витязь
 format: html
+execute:
+  echo: false
+  warning: false
+  message: false
 ---
 
 
@@ -25,7 +29,7 @@ file_path <- "data/Морфометрия Витязь.xlsx"
 df_morph <- read_excel(file_path, sheet = 4)
 
 df_morph  <- df_morph [!is.na(df_morph $ID), ]
-df_morph 
+# df_morph 
 ```
 
 ```{r}
@@ -51,7 +55,7 @@ df_morph |>
 
 df_morph$category <- factor(df_morph$category, levels = c("MT_pure", "MT_like_hybrids", "F1", "MG_like_hybrids", "MG_pure"))
 
-df_morph$category2 <- factor(df_morph$category2, levels = c("MT_pure", "Hybrid", "MG_pure"))
+df_morph$category2 <- factor(df_morph$category2, levels = c("MG_pure", "Hybrid", "MT_pure"))
 
 
 ```
@@ -164,7 +168,7 @@ RDA_classic_ind |>
   stat_chull(aes(color = category2), alpha = 0.01, geom = "polygon") +
   geom_point(aes(fill = Structure_MG), shape = 21, size = 4) +
   scale_fill_gradient(low = "red", high = "yellow") +
-  scale_color_manual(values = c("red", "gray", "yellow"))
+  scale_color_manual(values = c("yellow", "gray", "red"))
 
 
 
@@ -234,7 +238,7 @@ RDA_classic_ind |>
 RDA_classic_ind |> 
   ggplot(aes(x = PC1, fill = category2)) +
   geom_density(alpha = 0.9) +
-  scale_fill_manual(values = c("red", "gray", "yellow")) +
+    scale_fill_manual(values = c("yellow", "gray", "red" )) +
   facet_wrap(~category, ncol = 1)
 
   
@@ -249,7 +253,7 @@ RDA_classic_ind |>
 RDA_classic_ind |> 
   ggplot(aes(x = PC2, fill = category2)) +
   geom_density(alpha = 0.9) +
-  scale_fill_manual(values = c("red", "gray", "yellow")) +
+    scale_fill_manual(values = c("yellow", "gray", "red" )) +
   facet_wrap(~category, ncol = 1)
 
   
@@ -322,8 +326,7 @@ library(Momocs)
 ```
 
 ```{r}
-folder <- paste("data/", list.files("data"), sep = "")
-folder <- folder[-length(folder)]
+folder <- paste("data/", list.files("Data", pattern = "\\.txt$", full.names = FALSE), sep = "")
 
 coords <- import_txt(txt.paths = folder)
 myt <- Out(coords)
@@ -331,12 +334,134 @@ myt <- Out(coords)
 
 
 ```{r}
+df_names_myt <- data.frame(ID = names(myt))
+
+# В классической морфометрии есть мидии, которых нет в геометрической
 df_mussel_param |> 
-  arrange()
+  filter(!ID %in% names(myt))
 
-df_myt_names <- data.frame(ID = names(myt))
+# В геометрической есть мидии, которых нет в классической 
 
+df_names_myt |> 
+  filter(!ID %in% df_mussel_param$ID)
+# отсутсвующая мидия перенесена в папку data_dropped
+
+######################
+df_gen <- merge(df_names_myt, df_morph, by.x = TRUE, sort = F)
+
+# Пока берем только 84 оутлайна
+
+
+myt$fac <- df_gen
+
+
+
+pca_results <- myt %>%                  
+  efourier(6, norm = TRUE) %>%  
+  PCA()
 
 
 ```
 
+
+
+
+Морфопространство оутлайнов имеет следующую структуру 
+
+
+```{r}
+plot_PCA(pca_results, ~ Structure_MG, 
+  points = TRUE,
+  morphospace = TRUE,
+  chull = TRUE,
+  legend = F,
+  eigen = T,
+  
+)
+```
+
+```{r}
+df_PCA_outline <- as.data.frame(pca_results$x[,1:2]) #главные компоненты PCA по аутлайнам
+
+df_PCA_outline$ID <- row.names(df_PCA_outline)
+
+```
+
+
+Визуализация распределения точек по категориям в морфопространстве, образованном главными компонентами Фурье.
+
+```{r}
+df_PCA_outline |>
+  merge(df_mussel_param) |> 
+  ggplot(aes(PC1, PC2)) +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 0) +
+  
+  # 1) градиентная заливка плотности по категориям
+  geom_density_2d_filled(
+    aes(fill = after_stat(level), color = category2),
+    alpha = 0.5, contour_var = "density"
+  ) +
+    # 3) своя палитра заливки плотности (градиент внутри каждой категории)
+  scale_fill_manual(
+    values = colorRampPalette(c("white", "steelblue"))(10),
+    guide  = "none"
+  ) +
+  
+  # 4) новая fill-шкала для точек
+  new_scale_fill() +
+  geom_point(aes(fill = Structure_MG), shape = 21, size = 4, color = "black") +
+  scale_fill_gradient(low = "red", high = "yellow") +
+  facet_wrap(~category2)
+```
+
+
+
+
+
+```{r}
+
+library(ggrepel)
+
+df_PCA_outline |>
+  merge(df_mussel_param) |> 
+  ggplot(aes(PC1, PC2)) +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 0) +
+  
+  
+  # 1) градиентная заливка плотности по категориям
+  geom_density_2d_filled(
+    aes(fill = after_stat(level), color = category2),
+    alpha = 0.5, contour_var = "density"
+  ) +
+    # 3) своя палитра заливки плотности (градиент внутри каждой категории)
+  scale_fill_manual(
+    values = colorRampPalette(c("white", "steelblue"))(10),
+    guide  = "none"
+  ) +
+  
+  # 4) новая fill-шкала для точек
+  new_scale_fill() +
+  geom_point(aes(fill = Structure_MG), shape = 21, size = 4, color = "black") +
+  scale_fill_gradient(low = "red", high = "yellow") +
+  facet_wrap(~category2) +
+  geom_text_repel(aes(label = ID))
+```
+
+
+
+
+## Распределение значений PC1_outline по генетическим категориям 
+
+```{r}
+ df_PCA_outline |> 
+  merge(df_mussel_param) |> 
+  ggplot(aes(x = PC1, fill = category2)) +
+  geom_density(alpha = 0.9) +
+  scale_fill_manual(values = c("yellow", "gray", "red" )) +
+  facet_wrap(~category, ncol = 1)
+
+  
+  
+```
