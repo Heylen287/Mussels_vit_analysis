@@ -278,7 +278,7 @@ RDA_classic_ind |>
   facet_wrap(~category2)
 ```
 
-## Связь пармтеров морфопространства классической морфометрии с генетической струкутрой
+## Связь пармтеров морфопространства классической морфометрии с генетической структурой
 
 ```{r}
 library(mgcv)
@@ -311,6 +311,32 @@ Mod_PC2_on_str <- gam(PC2 ~ s(Structure_MG), data = RDA_classic_ind)
 summary(Mod_PC2_on_str)
 
 draw(Mod_PC2_on_str, residuals = T)
+
+```
+
+
+## Анализ оутлайнов
+
+```{r}
+library(Momocs)
+```
+
+```{r}
+folder <- paste("data/", list.files("data"), sep = "")
+folder <- folder[-length(folder)]
+
+coords <- import_txt(txt.paths = folder)
+myt <- Out(coords)
+```
+
+
+```{r}
+df_mussel_param |> 
+  arrange()
+
+df_myt_names <- data.frame(ID = names(myt))
+
+
 
 ```
 
