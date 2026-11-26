@@ -26,6 +26,41 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -138,13 +173,50 @@ ul.task-list li input[type="checkbox"] {
 </div>
 </section>
 </section>
+<section id="интерпретация-pc1" class="level2">
+<h2 class="anchored" data-anchor-id="интерпретация-pc1">Интерпретация PC1</h2>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>            RDA1          PC1          PC2 Trait
+wpr  -0.56318189 -0.478809773 -0.033456126   wpr
+vpr  -0.21531132 -0.268238317 -0.010826874   vpr
+dpr  -0.19456681 -0.218965431 -0.038085861   dpr
+tkn  -0.46566066 -0.181531258  0.139635099   tkn
+ht   -0.03450346 -0.121035897  0.007965671    ht
+pal  -0.25625184 -0.112248857 -0.093922547   pal
+ular -0.16809713 -0.088518180  0.098199716  ular
+padv -0.15115551 -0.086182941 -0.015684584  padv
+lar  -0.24124981 -0.075660298  0.063486012   lar
+ppad -0.16456769 -0.054867108 -0.038854848  ppad
+padp -0.08250679 -0.045559330 -0.034064220  padp
+hp   -0.13530700  0.033917906 -0.085957876    hp
+pad  -0.24475357 -0.031573189 -0.055623607   pad
+lig  -0.07044176 -0.014070481  0.022475540   lig
+lpr  -0.28430155  0.007242249 -0.026444701   lpr
+wid  -0.08587056 -0.006994433 -0.040720766   wid
+aam  -0.10152790  0.005468996 -0.301827127   aam</code></pre>
+</div>
+</div>
+<p>Самым диагностичным оказывается wpr, он сильнее всего связан с PC1_classic.</p>
+<p>Вот так выглядит связь этого признака с PC1.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Mussel_Vitiaz_Morphometry_files/figure-html/unnamed-chunk-15-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Наблюдается высокая корреляция PC1 и относительного размера заднего мускула-замыкателя. То есть в качестве диагностического признака можно брать именно этот признак.</p>
+</section>
 <section id="распределение-значений-pc1-по-генетическим-категориям" class="level2">
 <h2 class="anchored" data-anchor-id="распределение-значений-pc1-по-генетическим-категориям">Распределение значений PC1 по генетическим категориям</h2>
 <div class="cell">
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Mussel_Vitiaz_Morphometry_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Mussel_Vitiaz_Morphometry_files/figure-html/unnamed-chunk-16-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -156,7 +228,7 @@ ul.task-list li input[type="checkbox"] {
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Mussel_Vitiaz_Morphometry_files/figure-html/unnamed-chunk-15-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Mussel_Vitiaz_Morphometry_files/figure-html/unnamed-chunk-17-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -168,7 +240,7 @@ ul.task-list li input[type="checkbox"] {
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Mussel_Vitiaz_Morphometry_files/figure-html/unnamed-chunk-16-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Mussel_Vitiaz_Morphometry_files/figure-html/unnamed-chunk-18-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -202,7 +274,7 @@ R-sq.(adj) =  0.109   Deviance explained = 16.4%
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Mussel_Vitiaz_Morphometry_files/figure-html/unnamed-chunk-17-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Mussel_Vitiaz_Morphometry_files/figure-html/unnamed-chunk-19-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -230,7 +302,7 @@ GCV = 0.023196  Scale est. = 0.022578  n = 93</code></pre>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Mussel_Vitiaz_Morphometry_files/figure-html/unnamed-chunk-17-2.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Mussel_Vitiaz_Morphometry_files/figure-html/unnamed-chunk-19-2.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -258,7 +330,7 @@ GCV = 0.023224  Scale est. = 0.022725  n = 93</code></pre>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Mussel_Vitiaz_Morphometry_files/figure-html/unnamed-chunk-17-3.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Mussel_Vitiaz_Morphometry_files/figure-html/unnamed-chunk-19-3.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -297,7 +369,7 @@ GCV = 0.023224  Scale est. = 0.022725  n = 93</code></pre>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Mussel_Vitiaz_Morphometry_files/figure-html/unnamed-chunk-21-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Mussel_Vitiaz_Morphometry_files/figure-html/unnamed-chunk-23-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -307,7 +379,7 @@ GCV = 0.023224  Scale est. = 0.022725  n = 93</code></pre>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Mussel_Vitiaz_Morphometry_files/figure-html/unnamed-chunk-23-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Mussel_Vitiaz_Morphometry_files/figure-html/unnamed-chunk-25-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -316,11 +388,25 @@ GCV = 0.023224  Scale est. = 0.022725  n = 93</code></pre>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Mussel_Vitiaz_Morphometry_files/figure-html/unnamed-chunk-24-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Mussel_Vitiaz_Morphometry_files/figure-html/unnamed-chunk-26-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
+</section>
+<section id="трактовка-pc1_outline" class="level2">
+<h2 class="anchored" data-anchor-id="трактовка-pc1_outline">Трактовка PC1_outline</h2>
+<p>Поскольку PC1_outline явно отражает соотношение высотфы и длины раковины, то в качестве более простого маркера формы раковины можно испоьзовать отношение вычоты и длины. Вот так выглядит связь между отношением PC1_outline и ht/L.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Mussel_Vitiaz_Morphometry_files/figure-html/unnamed-chunk-27-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Видна очень хорошая корреляция.</p>
 </section>
 <section id="распределение-значений-pc1_outline-по-генетическим-категориям" class="level2">
 <h2 class="anchored" data-anchor-id="распределение-значений-pc1_outline-по-генетическим-категориям">Распределение значений PC1_outline по генетическим категориям</h2>
@@ -328,7 +414,149 @@ GCV = 0.023224  Scale est. = 0.022725  n = 93</code></pre>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Mussel_Vitiaz_Morphometry_files/figure-html/unnamed-chunk-25-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Mussel_Vitiaz_Morphometry_files/figure-html/unnamed-chunk-28-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Mussel_Vitiaz_Morphometry_files/figure-html/unnamed-chunk-29-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Mussel_Vitiaz_Morphometry_files/figure-html/unnamed-chunk-29-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="можно-ли-судить-о-генетическом-статусе-по-морфологии-раковины." class="level2">
+<h2 class="anchored" data-anchor-id="можно-ли-судить-о-генетическом-статусе-по-морфологии-раковины.">Можно ли судить о генетическом статусе по морфологии раковины.</h2>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>PC1_outline PC1_classic 
+   1.777946    1.777946 </code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Family: Beta regression(1.024) 
+Link function: logit 
+
+Formula:
+Structure_MG ~ s(PC1_outline, bs = "cs") + s(PC1_classic, bs = "cs")
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(&gt;|z|)
+(Intercept)  -0.1102     0.1375  -0.802    0.423
+
+Approximate significance of smooth terms:
+                     edf Ref.df Chi.sq p-value   
+s(PC1_outline) 2.433e-05      9  0.000 0.72891   
+s(PC1_classic) 1.213e+00      9  7.377 0.00547 **
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+R-sq.(adj) =  0.0852   Deviance explained = 13.3%
+-REML = -26.562  Scale est. = 1         n = 84</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Mussel_Vitiaz_Morphometry_files/figure-html/unnamed-chunk-33-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Упс… С формой раковины кажись и нет связи.</p>
+<p>Смотрим нет ли связи Structure_MG c более исходными признаками.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>df_morph <span class="ot">&lt;-</span> </span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  df_morph <span class="sc">|&gt;</span> </span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">HtL =</span> ht<span class="sc">/</span>L, <span class="at">WprL =</span> wpr<span class="sc">/</span>L)</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>mod_foo <span class="ot">&lt;-</span> <span class="fu">lm</span>(Structure_MG <span class="sc">~</span> HtL <span class="sc">+</span> WprL, <span class="at">data =</span> df_morph)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="fu">vif</span>(mod_foo)  </span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>     HtL     WprL 
+1.485802 1.485802 </code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Family: Beta regression(1.038) 
+Link function: logit 
+
+Formula:
+Structure_MG ~ s(HtL, bs = "cs") + s(WprL, bs = "cs")
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(&gt;|z|)
+(Intercept)  -0.1279     0.1301  -0.983    0.325
+
+Approximate significance of smooth terms:
+              edf Ref.df Chi.sq  p-value    
+s(HtL)  2.169e-05      9   0.00 0.722099    
+s(WprL) 1.227e+00      9  10.66 0.000806 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+R-sq.(adj) =  0.109   Deviance explained =   16%
+-REML = -31.761  Scale est. = 1         n = 93</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Mussel_Vitiaz_Morphometry_files/figure-html/unnamed-chunk-35-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Финальная модель, описывающая связь между Structure_MG и относительным размером заднего мускула замыкателя</p>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+betareg(formula = Structure_MG ~ WprL, data = df_morph)
+
+Quantile residuals:
+    Min      1Q  Median      3Q     Max 
+-1.7144 -0.8083  0.0462  0.7429  2.1863 
+
+Coefficients (mean model with logit link):
+            Estimate Std. Error z value Pr(&gt;|z|)    
+(Intercept)  -1.5655     0.4532  -3.454 0.000552 ***
+WprL         27.6851     8.3370   3.321 0.000898 ***
+
+Phi coefficients (precision model with identity link):
+      Estimate Std. Error z value Pr(&gt;|z|)    
+(phi)   1.0476     0.1241    8.44   &lt;2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1 
+
+Type of estimator: ML (maximum likelihood)
+Log-likelihood: 34.56 on 3 Df
+Pseudo R-squared: 0.1285
+Number of iterations: 116 (BFGS) + 5 (Fisher scoring) </code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Mussel_Vitiaz_Morphometry_files/figure-html/unnamed-chunk-37-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>

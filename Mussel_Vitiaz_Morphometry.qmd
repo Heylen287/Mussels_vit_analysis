@@ -232,6 +232,34 @@ RDA_classic_ind |>
 ```
 
 
+
+
+## Интерпретация PC1
+
+```{r}
+RDA_classic_traits |> arrange(desc(abs(PC1)))
+```
+
+Самым диагностичным оказывается `r (RDA_classic_traits |> arrange(desc(abs(PC1))) |> pull(Trait))[1]`, он сильнее всего связан с PC1_classic.
+
+Вот так выглядит связь этого признака с PC1.
+
+```{r}
+RDA_classic_ind |> 
+  merge(df_morph) |> 
+  ggplot(aes(x = wpr/L, y = PC1)) +
+  geom_point()
+
+
+```
+
+Наблюдается высокая корреляция PC1 и относительного размера заднего мускула-замыкателя.  То есть в качестве диагностического признака можно брать именно этот признак. 
+
+
+
+
+
+
 ## Распределение значений PC1 по генетическим категориям 
 
 ```{r}
@@ -413,6 +441,8 @@ df_PCA_outline |>
   geom_point(aes(fill = Structure_MG), shape = 21, size = 4, color = "black") +
   scale_fill_gradient(low = "red", high = "yellow") +
   facet_wrap(~category2)
+
+
 ```
 
 
@@ -451,6 +481,20 @@ df_PCA_outline |>
 
 
 
+## Трактовка PC1_outline
+
+Поскольку PC1_outline явно отражает соотношение высотфы и длины раковины, то в качестве более простого маркера формы раковины можно испоьзовать отношение вычоты и длины. Вот так выглядит связь между отношением PC1_outline и ht/L.
+
+```{r}
+df_PCA_outline |>
+  merge(df_morph) |> 
+  ggplot(aes(x = ht/L, y = PC1)) +
+  geom_point()
+
+```
+
+Видна очень хорошая корреляция. 
+
 
 ## Распределение значений PC1_outline по генетическим категориям 
 
@@ -465,3 +509,356 @@ df_PCA_outline |>
   
   
 ```
+
+
+```{r}
+df_PCA_outline |> 
+  merge(df_mussel_param) |> 
+  ggplot(aes(x = PC1, y = Structure_MG)) +
+  geom_point() +
+  geom_smooth(method = "gam")
+
+
+RDA_classic_ind |> 
+    ggplot(aes(x = PC1, y = Structure_MG)) +
+  geom_point() +
+  geom_smooth(method = "gam")
+
+
+```
+
+
+
+## Можно ли судить о генетическом статусе по морфологии раковины.
+
+
+```{r}
+
+# собираем PCA_classic и PCA_outline в один датафрейм
+
+RDA_classic_ind |> 
+  select(ID, PC1, PC2, Structure_MG) |> 
+  rename(PC1_classic = PC1, PC2_classic = PC2) ->
+  PCA_classic
+
+df_PCA_outline |> 
+  select(ID, PC1, PC2) |> 
+  rename(PC1_outline = PC1, PC2_outline = PC2) ->
+  PCA_outline
+
+# df_morph
+
+
+
+PCA_all <- merge(PCA_outline, PCA_classic)
+
+
+# df_morph |> 
+  # mutate(HL = ht/L) |> 
+  # select(ID, HL) |> 
+  # merge(PCA_all) ->
+  # PCA_all
+  # 
+  
+# PCA_all |> 
+#   ggplot(aes(x = PC1_classic, HL)) +
+#   geom_point()
+
+```
+
+
+
+```{r}
+library(car)
+#| echo: true
+mod_foo <- lm(Structure_MG ~ PC1_outline + PC1_classic, data = PCA_all)
+  
+vif(mod_foo)  
+```
+
+
+```{r}
+
+Mod_all_PC <- gam(Structure_MG ~ s(PC1_outline, bs = "cs") + s(PC1_classic, bs = "cs"), data = PCA_all, family = "betar")
+
+# gam.check(Mod_all_PC)
+# simulateResiduals(Mod_all_PC, plot = T)
+
+summary(Mod_all_PC)
+```
+
+```{r}
+draw(Mod_all_PC, residuals = T)
+
+```
+
+Упс... С формой раковины кажись и нет связи. 
+
+
+Смотрим нет ли связи Structure_MG c более исходными признаками. 
+
+```{r}
+#| echo: true
+#| 
+df_morph <- 
+  df_morph |> 
+  mutate(HtL = ht/L, WprL = wpr/L)
+
+
+mod_foo <- lm(Structure_MG ~ HtL + WprL, data = df_morph)
+  
+vif(mod_foo)  
+
+```
+
+
+```{r}
+Mod_traits <-  gam(Structure_MG ~ s(HtL, bs = "cs") + s(WprL, bs = "cs"), data = df_morph, family = "betar")
+
+# gam.check(Mod_traits)
+# simulateResiduals(Mod_traits, plot = T)
+
+summary(Mod_traits)
+
+draw(Mod_traits, residuals = T)
+```
+
+
+
+Финальная модель, описывающая связь между Structure_MG и относительным размером заднего мускула замыкателя
+
+```{r}
+library(betareg)
+
+Mod_traits <-  betareg(Structure_MG ~ WprL, data = df_morph)
+
+summary(Mod_traits)
+```
+
+```{r}
+mydata <- data.frame(WprL = seq(min(df_morph$WprL), max(df_morph$WprL), length.out = 100))
+
+mydata$fit <- predict(Mod_traits, newdata = mydata, type = "response")
+
+mydata |>
+  ggplot(aes(x = WprL, y = fit)) +
+  geom_line() +
+  geom_point(data = df_morph, aes(y = Structure_MG))
+  
+```
+
+Короче, моделировать Structure_MG в качестве зависимой переменной крайне плохо. Хрен поймет каким распределением аппроксимировать. Остатки гигантские.
+
+
+
+```{r}
+
+df_morph |> 
+  mutate(category3 = case_when(
+    category2 == "MG_pure" ~ 1, 
+    category2 == "Hybrid" ~ 2,
+    category2 == "MT_pure" ~ 0,
+  )) ->
+  df_morph
+
+
+
+Mod_poly <- gam(
+  list(
+    category3 ~  s(WprL, bs = "cs") + s(HtL, bs = "cs"),
+    ~  s(WprL, bs = "cs") + s(HtL, bs = "cs")
+  ),
+  data = df_morph,
+  family = multinom(K = 2)
+)
+
+
+
+```
+
+```{r}
+summary(Mod_poly)
+
+```
+
+
+
+```{r}
+library(tidyr)
+
+
+newd <- data.frame(
+  WprL = seq(min(df_morph$WprL, na.rm = TRUE),
+             max(df_morph$WprL, na.rm = TRUE),
+             length.out = 200),
+  HtL  = median(df_morph$HtL, na.rm = TRUE)
+)           
+
+pr <- predict(Mod_poly, newdata = newd, type = "response")
+
+colnames(pr) <- c("MT_pure", "MG_pure", "Hybrid")
+
+
+df_plot <- cbind(newd, as.data.frame(pr)) |>
+  pivot_longer(cols = c("MT_pure", "MG_pure", "Hybrid"),
+               names_to = "category", values_to = "prob") |>
+  mutate(category = factor(category, levels = c("MT_pure", "MG_pure", "Hybrid")))
+
+ggplot(df_plot, aes(x = WprL, y = prob, colour = category)) +
+  geom_line(linewidth = 1) +
+  scale_y_continuous(limits = c(0, 1)) +
+  labs(
+    x = "WprL",
+    y = "Вероятность",
+    colour = "Категория",
+    title = "Вероятности категорий в зависимости от WprL",
+    subtitle = paste0("HtL фиксирован на медиане = ",
+                      round(median(df_morph$HtL, na.rm = TRUE), 2))
+  ) +
+  theme_bw() +
+  theme(legend.position = "top")
+
+
+```
+
+
+
+```{r}
+
+set.seed(42)   # для воспроизводимости
+
+# --- 1. Сетка для предсказания (фиксирована для всех бутстрэп-моделей) ----
+newd <- data.frame(
+  WprL = seq(min(df_morph$WprL, na.rm = TRUE),
+             max(df_morph$WprL, na.rm = TRUE),
+             length.out = 200),
+  HtL  = median(df_morph$HtL, na.rm = TRUE)
+)
+
+# --- 2. Функция подгонки модели на одном бутстрэп-наборе -----------------
+fit_once <- function(dat) {
+  gam(
+    list(
+      category3 ~ s(WprL, bs = "cs") + s(HtL, bs = "cs"),
+      ~ s(WprL, bs = "cs") + s(HtL, bs = "cs")
+    ),
+    data = dat,
+    family = multinom(K = 2)
+  )
+}
+
+# --- 3. Бутстрэп ---------------------------------------------------------
+B <- 500                      # число ресемплов; увеличьте до 1000+ для стабильности
+n <- nrow(df_morph)
+
+boot_probs <- array(
+  NA_real_,
+  dim = c(nrow(newd), 3, B),
+  dimnames = list(NULL, c("MT_pure", "MG_pure", "Hybrid"), NULL)
+)
+
+for (b in seq_len(B)) {
+  idx  <- sample.int(n, size = n, replace = TRUE)
+  dat_b <- df_morph[idx, ]
+
+  fit_b <- tryCatch(
+    fit_once(dat_b),
+    error = function(e) NULL,
+    warning = function(w) {
+      # подавляем предупреждения о сходимости, но не прерываем цикл
+      suppressWarnings(fit_once(dat_b))
+    }
+  )
+
+  if (is.null(fit_b)) next
+
+  pr_b <- tryCatch(
+    predict(fit_b, newdata = newd, type = "response"),
+    error = function(e) NULL
+  )
+  if (is.null(pr_b)) next
+
+  boot_probs[, , b] <- pr_b
+}
+
+# --- 4. Квантили (95% ДИ) ------------------------------------------------
+alpha <- 0.05
+probs_q <- c(alpha / 2, 1 - alpha / 2)
+
+ci <- apply(boot_probs, c(1, 2), quantile, probs = probs_q, na.rm = TRUE)
+# ci имеет размерность 2 x nrow(newd) x 3
+
+# --- 5. Собираем в длинный формат ----------------------------------------
+cats <- c("MT_pure", "MG_pure", "Hybrid")
+
+df_ci <- bind_rows(lapply(seq_along(cats), function(j) {
+  data.frame(
+    WprL     = newd$WprL,
+    category = cats[j],
+    prob     = ci[2, , j] - (ci[2, , j] - ci[1, , j]) / 2,  # NA-заглушка, заменим ниже
+    lower    = ci[1, , j],
+    upper    = ci[2, , j]
+  )
+})) |>
+  mutate(category = factor(category, levels = cats))
+
+# Точки-оценки (по исходной модели) — для центральных линий
+pr_hat <- predict(Mod_poly, newdata = newd, type = "response")
+colnames(pr_hat) <- cats
+
+df_hat <- bind_rows(lapply(seq_along(cats), function(j) {
+  data.frame(
+    WprL     = newd$WprL,
+    category = cats[j],
+    prob     = pr_hat[, j]
+  )
+})) |>
+  mutate(category = factor(category, levels = cats))
+
+# --- 6. График -----------------------------------------------------------
+ggplot(df_hat, aes(x = WprL, y = prob, colour = category, fill = category)) +
+  geom_ribbon(data = df_ci,
+              aes(ymin = lower, ymax = upper),
+              alpha = 0.15, colour = NA, inherit.aes = TRUE) +
+  geom_line(linewidth = 1) +
+  scale_y_continuous(limits = c(0, 1)) +
+  labs(
+    x = "WprL",
+    y = "Вероятность",
+    colour = "Категория", fill = "Категория",
+    title = "Вероятности категорий (± 95% бутстрэп-ДИ)",
+    subtitle = paste0("HtL фиксирован на медиане = ",
+                      round(median(df_morph$HtL, na.rm = TRUE), 2),
+                      "; B = ", B)
+  ) +
+  theme_bw() +
+  theme(legend.position = "top")
+```
+
+
+
+```{r}
+df_morph_MG <-
+  df_morph |> 
+  mutate(Out = ifelse(category2 == "MG_pure", 1, 0), Sp = "MG_pure")
+  
+df_morph_MT <-
+  df_morph |> 
+  mutate(Out = ifelse(category2 == "MT_pure", 1, 0), Sp = "MT_pure")
+
+df_morph_Hybrid <-
+  df_morph |> 
+  mutate(Out = ifelse(category2 == "Hybrid", 1, 0), Sp = "Hybrid")
+
+df_morph_Sp <- rbind(df_morph_MG, df_morph_Hybrid, df_morph_MT)
+
+df_morph_Sp$Sp <- factor(df_morph_Sp$Sp)
+
+Model <- gam(Out ~ s(WprL, bs = "cs", by = Sp) + s(HtL, bs = "cs", by = Sp) + Sp, data =  df_morph_Sp, family = "binomial")
+
+summary(Model)  
+
+plot(Model, pages = 1)
+```
+
+
