@@ -188,7 +188,6 @@ draw(Mod_PC2_on_str, residuals = T)
 
 ```{r}
 
-# 1. Расчёт PCA через Momocs
 names(myt) <- gsub("v", "V", names(myt))
 df_names_myt <- data.frame(ID = names(myt))
 df_gen <- merge(df_names_myt, df_all, by = "ID", sort = FALSE)
@@ -203,7 +202,6 @@ df_out_pca <- as.data.frame(pca_results$x[, 1:2])
 df_out_pca$ID <- row.names(df_out_pca)
 df_pca_plot <- merge(df_all, df_out_pca, by = "ID")
 
-# 2. Параметры сетки 6 на 5
 n_cols      <- 6
 n_rows      <- 5
 shape_size  <- 0.9
@@ -232,7 +230,6 @@ x_lim <- rx + c(-1, 1) * pad * diff(rx)
 y_lim <- ry + c(-1, 1) * pad * diff(ry)
 Sx <- diff(x_lim); Sy <- diff(y_lim)
 
-# Используем min() вместо квадратных скобок, чтобы сетка гарантированно была 6 на 5
 grid_pos <- expand.grid(gx = min(x_lim) + (seq_len(n_cols) - 0.5) * Sx / n_cols,
                         gy = min(y_lim) + (seq_len(n_rows) - 0.5) * Sy / n_rows)
 
@@ -260,7 +257,6 @@ shapes_df <- bind_rows(lapply(seq_along(raw_shapes), function(i) {
              y = raw_shapes[[i]][, 2] * scale_vis * uy + grid_pos$gy[i])
 }))
 
-# 3. Отрисовка
 pal_starobogatov <- c("MEE" = "orange", "MEK" = "red", "MEZ" = "yellow")
 
 ggplot() +
