@@ -1,0 +1,329 @@
+---
+title: "geom_analysis_muss"
+format:
+  html:
+    embed-resources: true
+---
+
+```{r}
+library(readxl)
+library(dplyr)
+library(Momocs)
+library(ggplot2)
+library(vegan)
+library(cowplot)
+library(ggforce)
+library(ggpubr)
+library(ggnewscale)
+library(mgcv)
+library(gratia)
+library(DHARMa)
+
+theme_set(theme_bw())
+```
+
+```{r}
+
+```
+
+```{r}
+library(readxl)
+library(dplyr)
+
+file_path <- "F:/мидийное/Морфометрия Витязь_с дополнениями.xlsx"
+txt_dir   <- "F:/мидийное/mussels_geom/geom_analysis/data"   # папка с txt-контурами
+
+df_morph <- read_excel(file_path, sheet = "Full") |>
+  filter(!is.na(ID), !is.na(L), !is.na(Structure_MG)) |>
+  distinct(ID, .keep_all = TRUE)
+
+df_morph <- df_morph |>
+  mutate(
+    category = case_when(
+      Structure_MG <= 0.05 ~ "MT_pure",
+      Structure_MG >  0.05 & Structure_MG < 0.25 ~ "MT_like_hybrids",
+      Structure_MG >= 0.25 & Structure_MG <= 0.75 ~ "F1",
+      Structure_MG >  0.75 & Structure_MG < 0.95 ~ "MG_like_hybrids",
+      Structure_MG >= 0.95 ~ "MG_pure"
+    ),
+    category2 = case_when(
+      Structure_MG <= 0.05 ~ "MT_pure",
+      Structure_MG >  0.05 & Structure_MG < 0.95 ~ "Hybrid",
+      Structure_MG >= 0.95 ~ "MG_pure"
+    )
+  )
+
+```
+
+```{r}
+txt_files <- list.files(txt_dir, full.names = TRUE)
+myt <- Out(import_txt(txt.paths = txt_files))
+
+coe_all <- efourier(myt, nb.h = 6, norm = TRUE)$coe
+
+df_out <- as.data.frame(coe_all)
+df_out$ID <- gsub(x = row.names(df_out), pattern = "v", replacement = "V")
+
+df_all <- merge(df_morph, df_out, by = "ID")
+df_all <- df_all[!duplicated(df_all$ID), ]
+
+df_mussel_param <- 
+  df_all |> 
+  select(ID, L, Z, Sex, Morphotype, Structure_MG, Structure_MT, 
+         category, category2, Starobogatov_Skarlato)
+
+df_outline <- df_all[, colnames(coe_all)]
+df_outline <- df_outline[, apply(df_outline, 2, var) > 1e-12]
+rownames(df_outline) <- df_all$ID
+
+nrow(df_outline)
+```
+
+```{r}
+df_mussel_param |> 
+  ggplot(aes(x = Structure_MG, fill = category)) +
+  geom_density(alpha = 0.3) +
+  scale_fill_manual(values = c("red", "gray90", "gray", "gray60", "yellow"))
+```
+
+```{r}
+mod_pca_outline <- rda(df_outline)
+PC_outline <- scores(mod_pca_outline)$sites
+
+PC_outline <- cbind(df_mussel_param, PC_outline)
+
+PC_outline |> 
+  ggplot(aes(x = L, y = PC1)) +
+  geom_point()
+```
+
+```{r}
+mod_rda_outline <- rda(df_outline ~ L, data = df_mussel_param)
+
+RDA_outline_ind <- as.data.frame(scores(mod_rda_outline, choices = 1:3)$sites)
+RDA_outline_traits <- as.data.frame(scores(mod_rda_outline, choices = 1:3)$species)
+
+RDA_outline_traits$Trait <- row.names(RDA_outline_traits)
+
+RDA_outline_ind <-
+  cbind(df_mussel_param, RDA_outline_ind) |> 
+  as.data.frame()
+```
+
+```{r}
+RDA_outline_ind |> 
+  ggplot(aes(x = L, y = PC1)) +
+  geom_point() ->
+  PC1_vs_L
+
+RDA_outline_ind |> 
+  ggplot(aes(x = L, y = PC2)) +
+  geom_point() ->
+  PC2_vs_L
+
+plot_grid(PC1_vs_L, PC2_vs_L)
+```
+
+```{r}
+RDA_outline_ind |> 
+  ggplot(aes(PC1, PC2)) +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 0) +
+  stat_chull(aes(color = category2), alpha = 0.01, geom = "polygon") +
+  geom_point(aes(fill = Structure_MG), shape = 21, size = 4) +
+  scale_fill_gradient(low = "red", high = "yellow") +
+  scale_color_manual(values = c("red", "gray", "yellow"))
+```
+
+```{r}
+RDA_outline_ind$category2 <- factor(RDA_outline_ind$category2,
+                                    levels = c("MG_pure", "Hybrid", "MT_pure"))
+RDA_outline_ind |> 
+  ggplot(aes(PC1, PC2)) +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 0) +
+  geom_density_2d_filled(
+    aes(fill = after_stat(level), color = category2),
+    alpha = 0.5, contour_var = "density"
+  ) +
+  scale_fill_manual(
+    values = colorRampPalette(c("white", "steelblue"))(10),
+    guide  = "none"
+  ) +
+  new_scale_fill() +
+  geom_point(aes(fill = Structure_MG), shape = 21, size = 4, color = "black") +
+  scale_fill_gradient(low = "red", high = "yellow") +
+  facet_wrap(~category2)
+```
+
+```{r}
+Mod_str_on_PC <- gam(Structure_MG ~ s(PC1) + s(PC2), data = RDA_outline_ind, family = "betar")
+
+# simulateResiduals(Mod_str_on_PC, plot = T)
+
+summary(Mod_str_on_PC)
+
+draw(Mod_str_on_PC, residuals = T)
+```
+
+```{r}
+Mod_PC1_on_str <- gam(PC1 ~ s(Structure_MG), data = RDA_outline_ind)
+
+# simulateResiduals(Mod_PC1_on_str, plot = T)
+
+summary(Mod_PC1_on_str)
+
+draw(Mod_PC1_on_str, residuals = T)
+```
+
+```{r}
+Mod_PC2_on_str <- gam(PC2 ~ s(Structure_MG), data = RDA_outline_ind)
+
+# simulateResiduals(Mod_PC2_on_str, plot = T)
+
+summary(Mod_PC2_on_str)
+
+draw(Mod_PC2_on_str, residuals = T)
+```
+
+```{r}
+
+names(myt) <- gsub("v", "V", names(myt))
+df_names_myt <- data.frame(ID = names(myt))
+df_gen <- merge(df_names_myt, df_all, by = "ID", sort = FALSE)
+myt_sub <- slice(myt, match(df_gen$ID, names(myt)))
+myt_sub$fac <- df_gen
+
+pca_results <- myt_sub %>%
+  efourier(6, norm = TRUE) %>%
+  PCA()
+
+df_out_pca <- as.data.frame(pca_results$x[, 1:2])
+df_out_pca$ID <- row.names(df_out_pca)
+df_pca_plot <- merge(df_all, df_out_pca, by = "ID")
+
+n_cols      <- 6
+n_rows      <- 5
+shape_size  <- 0.9
+plot_aspect <- 0.75
+pad         <- 0.08
+
+var_expl <- 100 * pca_results$sdev^2 / sum(pca_results$sdev^2)
+lab_x <- sprintf("PC1 (%.1f%%)", head(var_expl, 1))
+lab_y <- sprintf("PC2 (%.1f%%)", var_expl[2])
+
+efourier_xy <- function(coe, nb_pts = 80) {
+  nb_h <- length(coe) / 4
+  an <- coe[1:nb_h];                    bn <- coe[(nb_h + 1):(2 * nb_h)]
+  cn <- coe[(2 * nb_h + 1):(3 * nb_h)]; dn <- coe[(3 * nb_h + 1):(4 * nb_h)]
+  t  <- seq(0, 2 * pi, length.out = nb_pts + 1)
+  x <- y <- numeric(length(t))
+  for (h in seq_len(nb_h)) {
+    x <- x + an[h] * cos(h * t) + bn[h] * sin(h * t)
+    y <- y + cn[h] * cos(h * t) + dn[h] * sin(h * t)
+  }
+  cbind(x = x, y = y)
+}
+
+rx <- range(df_pca_plot$PC1); ry <- range(df_pca_plot$PC2)
+x_lim <- rx + c(-1, 1) * pad * diff(rx)
+y_lim <- ry + c(-1, 1) * pad * diff(ry)
+Sx <- diff(x_lim); Sy <- diff(y_lim)
+
+grid_pos <- expand.grid(gx = min(x_lim) + (seq_len(n_cols) - 0.5) * Sx / n_cols,
+                        gy = min(y_lim) + (seq_len(n_rows) - 0.5) * Sy / n_rows)
+
+rot    <- pca_results$rotation[, 1:2]
+mshape <- if (!is.null(pca_results$mshape)) pca_results$mshape else pca_results$center
+
+raw_shapes <- lapply(seq_len(nrow(grid_pos)), function(i) {
+  coe <- mshape + as.numeric(rot %*% c(grid_pos$gx[i], grid_pos$gy[i]))
+  xy  <- efourier_xy(coe)
+  xy[, 1] <- xy[, 1] - mean(range(xy[, 1]))
+  xy[, 2] <- -(xy[, 2] - mean(range(xy[, 2])))
+  xy
+})
+
+w_max <- max(sapply(raw_shapes, function(s) diff(range(s[, 1]))))
+h_max <- max(sapply(raw_shapes, function(s) diff(range(s[, 2]))))
+scale_vis <- shape_size * min((1 / n_cols) / w_max, (plot_aspect / n_rows) / h_max)
+
+ux <- Sx
+uy <- Sy / plot_aspect
+
+shapes_df <- bind_rows(lapply(seq_along(raw_shapes), function(i) {
+  data.frame(id = i,
+             x = raw_shapes[[i]][, 1] * scale_vis * ux + grid_pos$gx[i],
+             y = raw_shapes[[i]][, 2] * scale_vis * uy + grid_pos$gy[i])
+}))
+
+pal_starobogatov <- c("MEE" = "orange", "MEK" = "red", "MEZ" = "yellow")
+
+ggplot() +
+  geom_polygon(data = shapes_df, aes(x, y, group = id),
+               fill = NA, colour = "grey70", linewidth = 0.6) +
+  geom_hline(yintercept = 0, colour = "grey45", linewidth = 0.4) +
+  geom_vline(xintercept = 0, colour = "grey45", linewidth = 0.4) +
+  geom_point(data = df_pca_plot |> filter(!is.na(Starobogatov_Skarlato)),
+             aes(PC1, PC2, fill = Starobogatov_Skarlato),
+             shape = 21, colour = "black", size = 3, alpha = 0.9) +
+  scale_fill_manual(values = pal_starobogatov) +
+  coord_cartesian(xlim = x_lim, ylim = y_lim, expand = FALSE) +
+  labs(x = lab_x, y = lab_y) +
+  theme_minimal(base_size = 16) +
+  theme(aspect.ratio    = plot_aspect,
+        panel.grid      = element_blank(),
+        axis.line       = element_line(colour = "grey30", linewidth = 0.4),
+        axis.ticks      = element_line(colour = "grey30", linewidth = 0.4),
+        axis.title      = element_text(colour = "grey20"),
+        legend.position = "bottom",
+        legend.title    = element_blank()) +
+  guides(fill = guide_legend(nrow = 2, byrow = TRUE,
+                             override.aes = list(size = 3.5, alpha = 0.9)))
+
+
+```
+
+```{r}
+RDA_outline_ind |> 
+  mutate(Starobogatov_Skarlato = df_all$Starobogatov_Skarlato) |> 
+  filter(!is.na(Starobogatov_Skarlato)) |> 
+  ggplot(aes(PC1, PC2)) +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 0) +
+  stat_chull(aes(color = category2), alpha = 0.01, geom = "polygon") +
+  geom_point(aes(fill = Starobogatov_Skarlato), shape = 21, size = 4, color = "black") +
+  scale_fill_manual(values = c("MEE" = "orange", "MEK" = "red", "MEZ" = "yellow")) +
+  scale_color_manual(values = c("red", "gray", "yellow"))
+
+
+```
+
+```         
+```
+
+`{df_morph$category  <- factor(df_morph$category,}                              levels = c("MT_pure", "MT_like_hybrids", "F1", "MG_like_hybrids", "MG_pure")) df_morph$category2 <- factor(df_morph$category2,                              levels = c("MT_pure", "Hybrid", "MG_pure"))`
+
+```         
+```
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+1 + 1
+```
+
+You can add options to executable code like this
+
+```{r}
+#| echo: false
+2 * 2
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).

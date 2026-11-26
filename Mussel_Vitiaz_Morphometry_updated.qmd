@@ -1,0 +1,331 @@
+---
+title: Морфометрия мидий из гибридной зоны в бухте Витязь
+format: html
+---
+
+
+
+```{r}
+library(readxl)
+library(dplyr)
+library(Momocs)
+library(ggplot2)
+library(vegan)
+library(cowplot)
+library(ggforce)
+
+theme_set(theme_bw())
+
+```
+
+
+
+```{r}
+file_path <- "F:/мидийное/Морфометрия Витязь_с дополнениями.xlsx"
+df_morph <- read_excel(file_path, sheet = "Full")
+
+df_morph  <- df_morph [!is.na(df_morph $ID), ]
+df_morph 
+```
+
+```{r}
+df_morph %>% 
+  mutate(category = case_when(`Structure_MG` <= 0.05 ~ "MT_pure", 
+                              `Structure_MG` < 0.25 & `Structure_MG` > 0.05 ~ "MT_like_hybrids",
+                              `Structure_MG` <= 0.75 & `Structure_MG` >= 0.25 ~ "F1",
+                              `Structure_MG` > 0.75 & `Structure_MG` < 0.95 ~ "MG_like_hybrids",
+                              `Structure_MG` >= 0.95 ~ "MG_pure")) ->
+  df_morph
+
+
+df_morph |> 
+  mutate(category2 = case_when(`Structure_MG` <= 0.05 ~ "MT_pure", 
+                              `Structure_MG` < 0.25 & `Structure_MG` > 0.05 ~ "Hybrid",
+                              `Structure_MG` <= 0.75 & `Structure_MG` >= 0.25 ~ "Hybrid",
+                              `Structure_MG` > 0.75 & `Structure_MG` < 0.95 ~ "Hybrid",
+                              `Structure_MG` >= 0.95 ~ "MG_pure")) ->
+  df_morph
+  
+
+
+
+df_morph$category <- factor(df_morph$category, levels = c("MT_pure", "MT_like_hybrids", "F1", "MG_like_hybrids", "MG_pure"))
+
+df_morph$category2 <- factor(df_morph$category2, levels = c("MT_pure", "Hybrid", "MG_pure"))
+
+
+```
+
+
+```{r}
+
+df_classic <- 
+  df_morph |> 
+  select(ID, aam, dpr, hp, ht, lar, lig, lpr, pad, padp, padv, pal, ppad, ular, vpr, wid, wpr, tkn)
+
+df_mussel_param <- 
+  df_morph |> 
+  select(ID, L, Z, Sex, Morphotype, Structure_MG, Structure_MT, 
+         category, category2, Starobogatov_Skarlato)
+
+```
+
+
+# Генетическая структура выборки
+
+```{r}
+df_mussel_param |> 
+  ggplot(aes(x = Structure_MG, fill = category)) +
+  geom_density(alpha = 0.3) +
+  scale_fill_manual(values = c("red", "gray90", "gray", "gray60", "yellow"))
+  
+```
+
+
+
+# Классическая сидовская морфометрия
+
+
+
+
+## RDA по классическим признакам
+
+```{r}
+df_classic_log <-
+  df_classic |> 
+  select(-ID) |> 
+  mutate(across(everything(), ~ log10(.x)/log10(df_mussel_param$L)))
+
+
+```
+
+Проверяем будет ли присутствовать связь между PC по классической маорфометрии и длиной мидии, как это было в случае с галарктическии мидиями
+
+```{r}
+mod_pca_classic <- rda(df_classic_log)
+PC_classic <- scores(mod_pca_classic)$sites
+
+PC_classic <-
+  cbind(df_mussel_param, PC_classic)
+
+PC_classic |> 
+  ggplot(aes(x = L, y = PC1)) +
+  geom_point()
+
+```
+
+Связь PC1 с размером очевидно есть. Следовательно строим модель RDA, с L, как предиктором, чтобы убрать влияние размеров.
+
+
+```{r}
+mod_rda_classic <- rda(df_classic_log ~ L, data = df_mussel_param)
+
+RDA_classic_ind <- as.data.frame(scores(mod_rda_classic, choices = 1:3)$sites)
+RDA_classic_traits <- as.data.frame(scores(mod_rda_classic, choices = 1:3)$species)
+
+RDA_classic_traits$Trait <- row.names(RDA_classic_traits)
+
+```
+
+
+```{r}
+RDA_classic_ind <-
+  cbind(df_mussel_param, RDA_classic_ind) |> 
+  as.data.frame()
+
+```
+
+После включения в модель L, остаточные значения PC1 и PC2, не демонстрируют связи с размером.
+
+```{r}
+RDA_classic_ind |> 
+  ggplot(aes(x = L, y = PC1)) +
+  geom_point() ->
+  PC1_vs_L
+
+RDA_classic_ind |> 
+  ggplot(aes(x = L, y = PC2)) +
+  geom_point() ->
+  PC2_vs_L
+
+plot_grid(PC1_vs_L, PC2_vs_L)
+```
+
+Таким образом, PC1 и PC2 задают морфопространство, лишенное аллометрических зависимостей.
+
+### Ординация в остаточных осях PC1 и PC2 после удаления влияния размера
+
+```{r}
+
+library(ggpubr)
+
+RDA_classic_ind |> 
+  ggplot(aes(PC1, PC2)) +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 0) +
+  stat_chull(aes(color = category2), alpha = 0.01, geom = "polygon") +
+  geom_point(aes(fill = Structure_MG), shape = 21, size = 4) +
+  scale_fill_gradient(low = "red", high = "yellow") +
+  scale_color_manual(values = c("red", "gray", "yellow"))
+
+
+
+```
+
+
+
+```{r}
+library(ggplot2)
+library(ggnewscale)
+
+RDA_classic_ind |> 
+  ggplot(aes(PC1, PC2)) +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 0) +
+  
+  # 1) градиентная заливка плотности по категориям
+  geom_density_2d_filled(
+    aes(fill = after_stat(level), color = category2),
+    alpha = 0.5, contour_var = "density"
+  ) +
+    # 3) своя палитра заливки плотности (градиент внутри каждой категории)
+  scale_fill_manual(
+    values = colorRampPalette(c("white", "steelblue"))(10),
+    guide  = "none"
+  ) +
+  
+  # 4) новая fill-шкала для точек
+  new_scale_fill() +
+  geom_point(aes(fill = Structure_MG), shape = 21, size = 4, color = "black") +
+  scale_fill_gradient(low = "red", high = "yellow") +
+  facet_wrap(~category2)
+```
+
+
+
+
+```{r}
+library(ggplot2)
+library(ggnewscale)
+
+RDA_classic_ind |> 
+  ggplot(aes(PC1, PC2)) +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 0) +
+  
+  # 1) градиентная заливка плотности по категориям
+  geom_density_2d_filled(
+    aes(fill = after_stat(level), color = category2),
+    alpha = 0.5, contour_var = "density"
+  ) +
+  scale_fill_manual(
+    values = colorRampPalette(c("white", "steelblue"))(10),
+    guide  = "none"
+  ) +
+  
+  new_scale_fill() +
+  geom_text(aes(label = ID)) +
+  scale_fill_gradient(low = "red", high = "yellow") +
+  facet_wrap(~category2)
+```
+
+
+## Распределение значений PC1 по генетическим категориям 
+
+```{r}
+RDA_classic_ind |> 
+  ggplot(aes(x = PC1, fill = category2)) +
+  geom_density(alpha = 0.9) +
+  scale_fill_manual(values = c("red", "gray", "yellow")) +
+  facet_wrap(~category, ncol = 1)
+
+  
+  
+```
+
+
+
+## Распределение значений PC2 по генетическим категориям 
+
+```{r}
+RDA_classic_ind |> 
+  ggplot(aes(x = PC2, fill = category2)) +
+  geom_density(alpha = 0.9) +
+  scale_fill_manual(values = c("red", "gray", "yellow")) +
+  facet_wrap(~category, ncol = 1)
+
+  
+  
+```
+
+## Связь признаков с морфопространством
+
+```{r}
+RDA_classic_ind |> 
+  ggplot(aes(PC1, PC2)) +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 0) +
+    geom_density_2d_filled(
+    aes(fill = after_stat(level), color = category2),
+    alpha = 0.5, contour_var = "density"
+  ) +
+    scale_fill_manual(
+    values = colorRampPalette(c("white", "steelblue"))(10),
+    guide  = "none"
+  ) +
+  
+  new_scale_fill() +
+  geom_text(data = RDA_classic_traits, aes(label = Trait)) +
+  scale_fill_gradient(low = "red", high = "yellow") +
+  facet_wrap(~category2)
+```
+
+## Связь пармтеров морфопространства классической морфометрии с генетической струкутрой
+
+```{r}
+library(mgcv)
+library(gratia)
+library(DHARMa)
+
+Mod_str_on_PC <- gam(Structure_MG ~ s(PC1) + s(PC2), data = RDA_classic_ind, family = "betar")
+
+# simulateResiduals(Mod_str_on_PC, plot = T)
+
+summary(Mod_str_on_PC)
+
+draw(Mod_str_on_PC, residuals = T)
+
+
+
+Mod_PC1_on_str <- gam(PC1 ~ s(Structure_MG), data = RDA_classic_ind)
+
+# simulateResiduals(Mod_PC1_on_str, plot = T)
+
+summary(Mod_PC1_on_str)
+
+draw(Mod_PC1_on_str, residuals = T)
+
+
+Mod_PC2_on_str <- gam(PC2 ~ s(Structure_MG), data = RDA_classic_ind)
+
+# simulateResiduals(Mod_PC2_on_str, plot = T)
+
+summary(Mod_PC2_on_str)
+draw(Mod_PC2_on_str, residuals = T) 
+```
+
+```{r}
+RDA_classic_ind |> 
+  mutate(Starobogatov_Skarlato = df_morph$Starobogatov_Skarlato) |> 
+  filter(!is.na(Starobogatov_Skarlato)) |> 
+  ggplot(aes(PC1, PC2)) +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 0) +
+  stat_chull(aes(color = category2), alpha = 0.01, geom = "polygon") +
+  geom_point(aes(fill = Starobogatov_Skarlato), shape = 21, size = 4, color = "black") +
+  scale_color_manual(values = c("red", "gray", "yellow")) +
+  scale_fill_manual(values = c("MEE" = "red", "MEK" = "orange", "MEZ" = "yellow"))
+
+
+```
+
