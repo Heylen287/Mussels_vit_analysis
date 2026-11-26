@@ -25,39 +25,55 @@ theme_set(theme_bw())
 
 
 ```{r}
-file_path <- "data/Морфометрия Витязь.xlsx"
-df_morph <- read_excel(file_path, sheet = 4)
+file_path <- "data/Морфометрия Витязь_с дополнениями.xlsx"
+df_morph <- read_excel(file_path, sheet = "Full")
 
 df_morph  <- df_morph [!is.na(df_morph $ID), ]
-# df_morph 
+
+df_morph <-
+  df_morph |> 
+  filter_out(is.na(Categ_for_analysis_popclust))
+
+
 ```
 
 ```{r}
-df_morph %>% 
-  mutate(category = case_when(`Structure_MG` <= 0.05 ~ "MT_pure", 
-                              `Structure_MG` < 0.25 & `Structure_MG` > 0.05 ~ "MT_like_hybrids",
-                              `Structure_MG` <= 0.75 & `Structure_MG` >= 0.25 ~ "F1",
-                              `Structure_MG` > 0.75 & `Structure_MG` < 0.95 ~ "MG_like_hybrids",
-                              `Structure_MG` >= 0.95 ~ "MG_pure")) ->
-  df_morph
+# df_morph %>% 
+#   mutate(category = case_when(`Structure_MG` <= 0.05 ~ "MT_pure", 
+#                               `Structure_MG` < 0.25 & `Structure_MG` > 0.05 ~ "MT_like_hybrids",
+#                               `Structure_MG` <= 0.75 & `Structure_MG` >= 0.25 ~ "F1",
+#                               `Structure_MG` > 0.75 & `Structure_MG` < 0.95 ~ "MG_like_hybrids",
+#                               `Structure_MG` >= 0.95 ~ "MG_pure")) ->
+#   df_morph
+# 
+# 
+# df_morph |> 
+#   mutate(category2 = case_when(`Structure_MG` <= 0.05 ~ "MT_pure", 
+#                               `Structure_MG` < 0.25 & `Structure_MG` > 0.05 ~ "Hybrid",
+#                               `Structure_MG` <= 0.75 & `Structure_MG` >= 0.25 ~ "Hybrid",
+#                               `Structure_MG` > 0.75 & `Structure_MG` < 0.95 ~ "Hybrid",
+#                               `Structure_MG` >= 0.95 ~ "MG_pure")) ->
+#   df_morph
+#   
+
+# unique(df_morph$Categ_for_analysis_popclust)
+
+df_morph$category <- factor(df_morph$Categ_for_analysis_popclust, levels = c("MG", "MG_back", "F1", "MT_back", "MT"))
 
 
-df_morph |> 
-  mutate(category2 = case_when(`Structure_MG` <= 0.05 ~ "MT_pure", 
-                              `Structure_MG` < 0.25 & `Structure_MG` > 0.05 ~ "Hybrid",
-                              `Structure_MG` <= 0.75 & `Structure_MG` >= 0.25 ~ "Hybrid",
-                              `Structure_MG` > 0.75 & `Structure_MG` < 0.95 ~ "Hybrid",
-                              `Structure_MG` >= 0.95 ~ "MG_pure")) ->
-  df_morph
-  
+df_morph <-
+  df_morph |> 
+  filter_out(is.na(category))
 
 
+df_morph <-
+  df_morph |> 
+  mutate(category2 = case_when(category == "MG" ~ "MG",
+                               category == "MT" ~ "MT",
+                               category != "MG" & category != "MT" ~ "Hybrid"))
 
-df_morph$category <- factor(df_morph$category, levels = c("MT_pure", "MT_like_hybrids", "F1", "MG_like_hybrids", "MG_pure"))
 
-df_morph$category2 <- factor(df_morph$category2, levels = c("MG_pure", "Hybrid", "MT_pure"))
-
-
+df_morph$category2 <- factor(df_morph$category2, levels = c("MG", "Hybrid", "MT"))
 ```
 
 
@@ -84,9 +100,10 @@ df_mussel_param |>
 ```
 
 
+Что-то здесь странное. Либо Structure_MG надо пересчитать, либо что-то не то с категориями. ППС считает, что не нужно использовать Structure_MG.
+
 
 # Классическая сидовская морфометрия
-
 
 
 
@@ -166,19 +183,20 @@ RDA_classic_ind |>
   geom_hline(yintercept = 0) +
   geom_vline(xintercept = 0) +
   stat_chull(aes(color = category2), alpha = 0.01, geom = "polygon") +
-  geom_point(aes(fill = Structure_MG), shape = 21, size = 4) +
-  scale_fill_gradient(low = "red", high = "yellow") +
-  scale_color_manual(values = c("yellow", "gray", "red"))
+  geom_point(aes(fill = category2), shape = 21, size = 4) +
+  scale_fill_manual(values = c("yellow", "gray",  "red")) +
+  scale_color_manual(values = c("yellow", "gray",  "red"))
 
 
 
 ```
 
-
+Видно, что чистые MG хорошо отличаются от чистых MT , но гибриды не отделяются  от MT. 
 
 ```{r}
 library(ggplot2)
 library(ggnewscale)
+
 
 RDA_classic_ind |> 
   ggplot(aes(PC1, PC2)) +
@@ -192,44 +210,19 @@ RDA_classic_ind |>
   ) +
     # 3) своя палитра заливки плотности (градиент внутри каждой категории)
   scale_fill_manual(
-    values = colorRampPalette(c("white", "steelblue"))(10),
+    values = colorRampPalette(c("white", "steelblue"))(12),
     guide  = "none"
   ) +
-  
+
   # 4) новая fill-шкала для точек
   new_scale_fill() +
-  geom_point(aes(fill = Structure_MG), shape = 21, size = 4, color = "black") +
-  scale_fill_gradient(low = "red", high = "yellow") +
-  facet_wrap(~category2)
+  geom_point(aes(fill = category2), shape = 21, size = 4, color = "black") +
+  scale_fill_manual(values = c("yellow", "gray",  "red")) +
+  facet_wrap(~category2) +
+  guides(fill = "none", color = "none")
 ```
 
 
-
-
-```{r}
-library(ggplot2)
-library(ggnewscale)
-
-RDA_classic_ind |> 
-  ggplot(aes(PC1, PC2)) +
-  geom_hline(yintercept = 0) +
-  geom_vline(xintercept = 0) +
-  
-  # 1) градиентная заливка плотности по категориям
-  geom_density_2d_filled(
-    aes(fill = after_stat(level), color = category2),
-    alpha = 0.5, contour_var = "density"
-  ) +
-  scale_fill_manual(
-    values = colorRampPalette(c("white", "steelblue"))(10),
-    guide  = "none"
-  ) +
-  
-  new_scale_fill() +
-  geom_text(aes(label = ID)) +
-  scale_fill_gradient(low = "red", high = "yellow") +
-  facet_wrap(~category2)
-```
 
 
 
@@ -267,26 +260,40 @@ RDA_classic_ind |>
   ggplot(aes(x = PC1, fill = category2)) +
   geom_density(alpha = 0.9) +
     scale_fill_manual(values = c("yellow", "gray", "red" )) +
-  facet_wrap(~category, ncol = 1)
+  facet_wrap(~category2, ncol = 1)
 
   
   
 ```
 
-
-
-## Распределение значений PC2 по генетическим категориям 
+## Распределение значений Z-индекса по генетическим категориям 
 
 ```{r}
-RDA_classic_ind |> 
-  ggplot(aes(x = PC2, fill = category2)) +
+df_morph |> 
+  ggplot(aes(x = Z, fill = category2)) +
   geom_density(alpha = 0.9) +
     scale_fill_manual(values = c("yellow", "gray", "red" )) +
-  facet_wrap(~category, ncol = 1)
+  facet_wrap(~category2, ncol = 1)
 
   
   
+  
 ```
+
+
+
+<!-- ## Распределение значений PC2 по генетическим категориям  -->
+
+<!-- ```{r} -->
+<!-- RDA_classic_ind |>  -->
+<!--   ggplot(aes(x = PC2, fill = category2)) + -->
+<!--   geom_density(alpha = 0.9) + -->
+<!--     scale_fill_manual(values = c("yellow", "gray", "red" )) + -->
+<!--   facet_wrap(~category2, ncol = 1) -->
+
+
+
+<!-- ``` -->
 
 ## Связь признаков с морфопространством
 
@@ -300,7 +307,7 @@ RDA_classic_ind |>
     alpha = 0.5, contour_var = "density"
   ) +
     scale_fill_manual(
-    values = colorRampPalette(c("white", "steelblue"))(10),
+    values = colorRampPalette(c("white", "steelblue"))(12),
     guide  = "none"
   ) +
   
@@ -310,43 +317,7 @@ RDA_classic_ind |>
   facet_wrap(~category2)
 ```
 
-## Связь пармтеров морфопространства классической морфометрии с генетической структурой
-
-```{r}
-library(mgcv)
-library(gratia)
-library(DHARMa)
-
-Mod_str_on_PC <- gam(Structure_MG ~ s(PC1) + s(PC2), data = RDA_classic_ind, family = "betar")
-
-# simulateResiduals(Mod_str_on_PC, plot = T)
-
-summary(Mod_str_on_PC)
-
-draw(Mod_str_on_PC, residuals = T)
-
-
-
-Mod_PC1_on_str <- gam(PC1 ~ s(Structure_MG), data = RDA_classic_ind)
-
-# simulateResiduals(Mod_PC1_on_str, plot = T)
-
-summary(Mod_PC1_on_str)
-
-draw(Mod_PC1_on_str, residuals = T)
-
-
-Mod_PC2_on_str <- gam(PC2 ~ s(Structure_MG), data = RDA_classic_ind)
-
-# simulateResiduals(Mod_PC2_on_str, plot = T)
-
-summary(Mod_PC2_on_str)
-
-draw(Mod_PC2_on_str, residuals = T)
-
-```
-
-
+Лена! Я остановился здесь. Пройдите дальше
 ## Анализ оутлайнов
 
 ```{r}
