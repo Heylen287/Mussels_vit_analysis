@@ -32,8 +32,8 @@ theme_set(theme_bw())
 library(readxl)
 library(dplyr)
 
-file_path <- "F:/мидийное/mussels morphology analysis/Морфометрия Витязь.xlsx"
-txt_dir   <- "F:/мидийное/mussels_geom/geom_analysis/data"   # папка с txt-контурами
+file_path <- "data/Морфометрия Витязь.xlsx"
+txt_dir   <- "data/data"   # папка с txt-контурами
 
 df_morph <- read_excel(file_path, sheet = 4)
 df_morph <- df_morph[!is.na(df_morph$ID), ]
